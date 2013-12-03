@@ -7,8 +7,8 @@ section .text
 ;return type: str
 get_cpu_brand: 
 	;rsp -= 40
-push rbp
-mov rbp, rsp 
+	push rbp
+	mov rbp, rsp 
 	sub rsp, 32 
 	;$eax=0, cpuid
 	xor eax, eax
