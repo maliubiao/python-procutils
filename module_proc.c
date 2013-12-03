@@ -3,7 +3,7 @@
 #include <sched.h>
 #include <sys/time.h>
 #include <sys/resource.h>
-#include <linux/getcpu.h> 
+//#include <linux/getcpu.h> 
 #include <sys/syscall.h>
 
 extern PyObject *get_cpu_brand();
