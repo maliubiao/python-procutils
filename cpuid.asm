@@ -6,9 +6,9 @@ section .text
 ;PyObject *get_cpu_brand()
 ;return type: str
 get_cpu_brand: 
-	#rsp -= 40
-    push rbp
-    mov rbp, rsp 
+	;rsp -= 40
+push rbp
+mov rbp, rsp 
 	sub rsp, 32 
 	;$eax=0, cpuid
 	xor eax, eax
