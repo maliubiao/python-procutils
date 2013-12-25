@@ -8,8 +8,8 @@ interface to access fs/proc,  kernel scheduler, os environment
 #gcc -o_proc.o -c module_proc.c  -shared -fPIC $(/usr/bin/python2.7-config --libs --includes --cflags)
 #gcc -o_proc.so _proc.o cpuid.o -shared $(/usr/bin/python2.7-config --libs --includes --cflags)
 ##Demo
-```shell
-
+``` 
+```shell 
 >>> pprint.pprint(proc.read_task_stat(os.getpid())
 ... )
 {'arg_end': 140734885481808,
@@ -231,5 +231,24 @@ interface to access fs/proc,  kernel scheduler, os environment
  'core/optmem_max': 20480,
  'core/rmem_default': 212992,
 ...
-```
 
+```
+###on which cpu , which node
+```shell 
+>>> _proc.getcpu()
+(3, 0)
+```
+###cpu affinity
+```shell 
+>>> _proc.sched_getaffinity(os.getpid())
+[0, 1, 2, 3] 
+>>> _proc.sched_setaffinity(os.getpid(), (2,))
+>>> _proc.getcpu()
+(2, 0)
+>>> _proc.getcpu()
+(2, 0)
+```
+```shell 
+>>> _proc.get_cpu_brand()
+'GenuineIntel'
+```
