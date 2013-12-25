@@ -265,7 +265,7 @@ def read_pid_status(pid):
     status_dict = {}
     for line in lines:
         entry = line.split(":\t")
-        status_dict[entry[0]] = entry[1] 
+        status_dict[entry[0]] = entry[1].strip("\n").replace("\t", " ") 
     return status_dict
 
 def read_pid_mountinfo(pid):
@@ -442,10 +442,18 @@ def read_sys_net(keylist = None, perm=False):
                 if key in known:
                     hit = known
             if hit:
-                net_dict[key] = read_api_file(hit)
+                value = read_api_file(hit)
+                if isinstance(value, str):
+                    net_dict[key] = value.replace("\t", "\x20")
+                else:
+                    net_dict[key] = value
     else:        
         for known in net_known_list_3_11:
-            net_dict[known[0]] = read_api_file(known, perm)
+            value = read_api_file(known, perm) 
+            if isinstance(value, str):
+                net_dict[known[0]] = value.replace("\t", "\x20")
+            else:
+                net_dict[known[0]] = value
     return net_dict
 
 def write_sys_net(net_dict, perm=False): 
