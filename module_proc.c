@@ -9,6 +9,7 @@
 #include <attr/xattr.h>
 
 extern PyObject *get_cpu_brand();
+extern int *get_cpu_feature();
 
 PyDoc_STRVAR(proc_getrusage_doc, "call getrusage");
 
@@ -205,6 +206,171 @@ proc_get_cpu_brand(PyObject *object, PyObject *args)
 	}
 	Py_RETURN_NONE;
 
+}
+
+PyDoc_STRVAR(proc_get_cpu_feature_doc, "call get_cpu_feature");
+
+static PyObject *
+proc_get_cpu_feature(PyObject *object, PyObject *args)
+{
+	int *buf;
+	PyObject *rd;
+	unsigned int *ptr; 
+	buf = get_cpu_feature(); 
+	if (!buf)
+		Py_RETURN_NONE;
+	ptr = (unsigned int *)buf;
+	//stepping id bits[0:3]
+	rd = PyDict_New();
+	PyDict_SetItemString(rd, "stepping_id", PyInt_FromLong(*ptr & 0xf));
+	//model bits[4:7]
+	PyDict_SetItemString(rd, "model", PyInt_FromLong((*ptr & 0xf0)>>4));
+	//family bits[8:11]
+	PyDict_SetItemString(rd, "family", PyInt_FromLong((*ptr & 0xf00) >> 8));
+	//type bits[12:13], 00b OEM, 01b OVerDrive, 10b Dual Procssor
+	PyDict_SetItemString(rd, "process_type", PyInt_FromLong((*ptr & 0x3000) >> 12));
+	//extended model id bits[16:19]
+	PyDict_SetItemString(rd, "extended_mode", PyInt_FromLong((*ptr & 0xf0000) >> 16));
+	//extended family id bits[20:27]
+	PyDict_SetItemString(rd, "extended_family", PyInt_FromLong((*ptr & 0xff00000) >> 20));
+	ptr += 1; 
+	//brand index bits[0:7]
+	PyDict_SetItemString(rd, "brand", PyInt_FromLong(*ptr & 0xff));
+	//clflush line size bits[8:15]
+	PyDict_SetItemString(rd, "clflush", PyInt_FromLong((*ptr & 0xff00) >> 8));
+	//inital APIC ID bits[24:31]
+	PyDict_SetItemString(rd, "inital_apic", PyInt_FromLong((*ptr & 0xff000000) >> 24));
+	ptr += 1; 
+	//bit 0, SSE3, Streaming SIMD Extension 3
+	PyDict_SetItemString(rd, "sse3", PyBool_FromLong(*ptr & 0x1));
+	//bit 1, PCLMULQDQ
+	PyDict_SetItemString(rd, "pclmulqdq", PyBool_FromLong(*ptr & 0x2));
+	//bit 2, DTES64,  DS area using 64-bit layout
+	PyDict_SetItemString(rd, "dtes64", PyBool_FromLong(*ptr & 0x4));
+	//bit 3, MONITOR
+	PyDict_SetItemString(rd, "monitor", PyBool_FromLong(*ptr & 0x8));
+	//bit 4 DS_CPL, CPL Qualified Debug Store
+	PyDict_SetItemString(rd, "ds_cpl", PyBool_FromLong(*ptr & 0x10));
+	//bit 5 VMX, Virtual Machine Extension
+	PyDict_SetItemString(rd, "vmx", PyBool_FromLong(*ptr & 0x20));
+	//bit 6 SMX, Safer Mode Extensions
+	PyDict_SetItemString(rd, "smx", PyBool_FromLong(*ptr & 0x40));
+	//bit 7 EIST, Enhanced Intel SpeedStep Technology
+	PyDict_SetItemString(rd, "eist", PyBool_FromLong(*ptr & 0x80));
+	//bit 8 TM2, Thermal Monitor 2
+	PyDict_SetItemString(rd, "tm2", PyBool_FromLong(*ptr & 0x100));
+	//bit 9 SSSE3, Supplemental SSE3
+	PyDict_SetItemString(rd, "ssse3", PyBool_FromLong(*ptr & 0x200));
+	//bit 10 CNXT-ID, L1 Context ID
+	PyDict_SetItemString(rd, "cnxt-id", PyBool_FromLong(*ptr & 0x400));
+	//bit 11 Reserved
+	//*ptr & 0x800;
+	//bit 12 FMA
+	PyDict_SetItemString(rd, "fma", PyBool_FromLong(*ptr & 0x1000));
+	//bit 13 CMPXCHG16B
+	PyDict_SetItemString(rd, "cmpxchg16b", PyBool_FromLong(*ptr & 0x2000));
+	//bit 14 xTPR Update Control
+	PyDict_SetItemString(rd, "xtpr", PyBool_FromLong(*ptr & 0x4000));
+	//bit 15 PDCM, Perfmon and Debug Capability
+	PyDict_SetItemString(rd, "pdcm", PyBool_FromLong(*ptr & 0x8000));
+	//bit 16 Reserved
+	//*ptr & 0x10000;
+	//bit 17 PCID, Process-context identifiers
+	PyDict_SetItemString(rd, "pcid", PyBool_FromLong(*ptr & 0x20000));
+	//bit 18 DCA, prefetch data from a memory mapped device
+	PyDict_SetItemString(rd, "dca", PyBool_FromLong(*ptr & 0x40000));
+	//bit 19 SSE4.1
+	PyDict_SetItemString(rd, "sse41", PyBool_FromLong(*ptr & 0x80000));
+	//bit 20 SSE 4.2
+	PyDict_SetItemString(rd, "sse42", PyBool_FromLong(*ptr & 0x100000));
+	//bit 21 x2APIC
+	PyDict_SetItemString(rd, "x2apic", PyBool_FromLong(*ptr & 0x200000));
+	//bit 22 MOVBE
+	PyDict_SetItemString(rd, "movbe", PyBool_FromLong(*ptr & 0x400000));
+	//bit 23 POPCNT
+	PyDict_SetItemString(rd, "popcnt", PyBool_FromLong(*ptr & 0x800000));
+	//bit 24 TSC-Dealine
+	PyDict_SetItemString(rd, "tsc", PyBool_FromLong(*ptr & 0x1000000));
+	//bit 25 AESNI
+	PyDict_SetItemString(rd, "aesni", PyBool_FromLong(*ptr & 0x2000000));
+	//bit 26 XSAVE
+	PyDict_SetItemString(rd, "xsave", PyBool_FromLong(*ptr & 0x4000000));
+	//bit 27 OSXSAVE
+	PyDict_SetItemString(rd, "osxsave", PyBool_FromLong(*ptr & 0x8000000));
+	//bit 28 AVX
+	PyDict_SetItemString(rd, "avx", PyBool_FromLong(*ptr & 0x10000000));
+	//bit 29 F16C
+	PyDict_SetItemString(rd, "f16c", PyBool_FromLong(*ptr & 0x20000000));
+	//bit 30 RDRAND
+	PyDict_SetItemString(rd, "rdrand", PyBool_FromLong(*ptr & 0x40000000));
+	//bit 31 Not Used
+	//*ptr & 0x80000000; 
+	ptr += 1;
+	//bit 0, FPU-x87 FPU on Chip 
+	PyDict_SetItemString(rd, "fpu_x87", PyBool_FromLong(*ptr & 0x1));
+	//bit 1, VME-Virtual-8086 Mode Enancement
+	PyDict_SetItemString(rd, "vme", PyBool_FromLong(*ptr & 0x2));
+	//bit 2, DE-Debuggin Extensions
+	PyDict_SetItemString(rd, "de", PyBool_FromLong(*ptr & 0x4));
+	//bit 3, PSE-Page Size Extensions
+	PyDict_SetItemString(rd, "pse", PyBool_FromLong(*ptr & 0x8));
+	//bit 4, TSC-Time Stamp Counter
+	PyDict_SetItemString(rd, "tsc", PyBool_FromLong(*ptr & 0x10));
+	//bit 5, MSR-RDMSR and WRMSR Support
+	PyDict_SetItemString(rd, "msr_rdmsr", PyBool_FromLong(*ptr & 0x20));
+	//bit 6, PAE-Physical Address Extension
+	PyDict_SetItemString(rd, "pae", PyBool_FromLong(*ptr & 0x40));
+	//bit 7, MCE-Machine Check Exception
+	PyDict_SetItemString(rd, "mce", PyBool_FromLong(*ptr & 0x80));
+	//bit 8, CX8-CMPXCHG8B Inst
+	PyDict_SetItemString(rd, "cx8_cmpxchg8b", PyBool_FromLong(*ptr & 0x100));
+	//bit 9, APIC-APIC on Chip
+	PyDict_SetItemString(rd, "apic", PyBool_FromLong(*ptr & 0x200));
+	//bit 10, Reserved
+	//*ptr & 0x400;
+	//bit 11, SEP-SYSENTER and SYSEXIT 
+	PyDict_SetItemString(rd, "sep", PyBool_FromLong(*ptr & 0x800));
+	//bit 12, MTRR-Memory Type Range Registers
+	PyDict_SetItemString(rd, "mtrr", PyBool_FromLong(*ptr & 0x1000));
+	//bit 13, PGE-PTE Global Bit
+	PyDict_SetItemString(rd, "pge_pte", PyBool_FromLong(*ptr & 0x2000));
+	//bit 14, MCA-Macine Check Architecture
+	PyDict_SetItemString(rd, "mca", PyBool_FromLong(*ptr & 0x4000));
+	//bit 15, CMOV-Conditional Move/Compare Instruction
+	PyDict_SetItemString(rd, "cmov", PyBool_FromLong(*ptr & 0x8000));
+	//bit 16, PAT-Page Attribute Table
+	PyDict_SetItemString(rd, "pat", PyBool_FromLong(*ptr & 0x10000));
+	//bit 17, PSE-36-Page Size Extension
+	PyDict_SetItemString(rd, "pse", PyBool_FromLong(*ptr & 0x20000));
+	//bit 18, PSN-Processor Serial Number
+	PyDict_SetItemString(rd, "psn", PyBool_FromLong(*ptr & 0x40000));
+	//bit 19, CLFSH-CFLUSH instruction
+	PyDict_SetItemString(rd, "clfsh_cflush", PyBool_FromLong(*ptr & 0x80000));
+	//bit 20, Reserved
+	//*ptr & 0x100000;;
+	//bit 21, DS-Debug Store
+	PyDict_SetItemString(rd, "ds", PyBool_FromLong(*ptr & 0x200000));
+	//bit 22, ACPI-Thermal Monitor and Clock Ctrl
+	PyDict_SetItemString(rd, "acpi_thermal", PyBool_FromLong(*ptr & 0x400000));
+	//bit 23, MMX-MMx Technology
+	PyDict_SetItemString(rd, "mmx", PyBool_FromLong(*ptr & 0x800000));
+	//bit 24, FXSR-FXSAVE/FXRSTOR
+	PyDict_SetItemString(rd, "fxsr_sxsave", PyBool_FromLong(*ptr & 0x1000000));
+	//bit 25, SSE-SSE Extensions
+	PyDict_SetItemString(rd, "sse", PyBool_FromLong(*ptr & 0x2000000));
+	//bit 26, SSE2- SSE2 Exension
+	PyDict_SetItemString(rd, "sse2", PyBool_FromLong(*ptr & 0x4000000));
+	//bit 27, SS-Self SNoop
+	PyDict_SetItemString(rd, "ss", PyBool_FromLong(*ptr & 0x8000000));
+	//bit 28, HTT, Multi-threading, 
+	PyDict_SetItemString(rd, "htt", PyBool_FromLong(*ptr & 0x10000000));
+	//bit 29, TM-Therm.Monitor
+	PyDict_SetItemString(rd, "tm", PyBool_FromLong(*ptr & 0x20000000));		 //bit 30, Reserved
+	//*ptr & 0x40000000;
+	//bit 31, PBE-Pend.Brk.EN
+	PyDict_SetItemString(rd, "pbe", PyBool_FromLong(*ptr & 0x80000000)); 
+	PyMem_Free(buf);
+	return rd; 
 }
 
 PyDoc_STRVAR(proc_setpriority_doc, "call setpriority");
@@ -548,6 +714,8 @@ static PyMethodDef proc_methods[] = {
 		METH_VARARGS, proc_getcpu_doc}, 
 	{"get_cpu_brand", (PyCFunction)proc_get_cpu_brand,
 		METH_VARARGS, proc_get_cpu_brand_doc}, 
+	{"get_cpu_feature", (PyCFunction)proc_get_cpu_feature,
+		METH_VARARGS, proc_get_cpu_feature_doc},
 	{"get_quota", (PyCFunction)proc_get_quota,
 		METH_VARARGS, proc_get_quota_doc},
 	{"enable_quota", (PyCFunction)proc_enable_quota,
@@ -573,7 +741,7 @@ static PyMethodDef proc_methods[] = {
 	{"lremovexattr", (PyCFunction)proc_lremovexattr,
 		METH_VARARGS, proc_lremovexattr_doc},
 	{"fremovexattr", (PyCFunction)proc_fremovexattr,
-		METH_VARARGS, proc_fremovexattr_doc},
+		METH_VARARGS, proc_fremovexattr_doc}, 
 	{NULL, NULL, 0, NULL}
 };
 
