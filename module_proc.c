@@ -9,7 +9,7 @@
 #include <attr/xattr.h>
 
 extern PyObject *get_cpu_brand();
-extern int *get_cpu_feature();
+extern int *do_cpuid(int);
 
 PyDoc_STRVAR(proc_getrusage_doc, "call getrusage");
 
@@ -216,7 +216,7 @@ proc_get_cpu_feature(PyObject *object, PyObject *args)
 	int *buf;
 	PyObject *rd;
 	unsigned int *ptr; 
-	buf = get_cpu_feature(); 
+	buf = do_cpuid(0x1); 
 	if (!buf)
 		Py_RETURN_NONE;
 	ptr = (unsigned int *)buf;
@@ -239,7 +239,7 @@ proc_get_cpu_feature(PyObject *object, PyObject *args)
 	//clflush line size bits[8:15]
 	PyDict_SetItemString(rd, "clflush", PyInt_FromLong((*ptr & 0xff00) >> 8));
 	//inital APIC ID bits[24:31]
-	PyDict_SetItemString(rd, "inital_apic", PyInt_FromLong((*ptr & 0xff000000) >> 24));
+	PyDict_SetItemString(rd, "initial_apic", PyInt_FromLong((*ptr & 0xff000000) >> 24));
 	ptr += 1; 
 	//bit 0, SSE3, Streaming SIMD Extension 3
 	PyDict_SetItemString(rd, "sse3", PyBool_FromLong(*ptr & 0x1));

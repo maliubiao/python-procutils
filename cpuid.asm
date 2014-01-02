@@ -3,7 +3,7 @@ section .text
 	extern PyMem_Malloc
 	extern PyString_FromString 
 	global get_cpu_brand 
-	global get_cpu_feature 
+	global do_cpuid
 
 ;PyObject *get_cpu_brand()
 ;return type: str
@@ -27,22 +27,24 @@ get_cpu_brand:
 	leave	
 	ret
 
-;int *get_cpu_feature() 
-;return type: int *ptr 
-get_cpu_feature: 
+;int *do_cpuid(int) 
+;return type: int *ptr.
+do_cpuid: 
 	push rbp
 	mov rbp, rsp 
+	;save p1
+	push rdi
 	;$rax = malloc(40)
-	mov rdi, 40;
-	mov rax, 0; 
+	mov rdi, 40
+	mov rax, 0 
 	call PyMem_Malloc wrt ..plt; 
-	push rax
+	pop r8
+	push rax 
 	;$eax=0, cpuid
-	mov eax, 0x1 
+	mov eax, r8d 
 	cpuid
 	;copy registers
-	pop r8
-	;$eax, $ebx, $ecx, $edx->[$rax]
+	pop r8 
 	mov [r8], eax
 	mov [r8+4], ebx
 	mov [r8+8], ecx
@@ -50,3 +52,4 @@ get_cpu_feature:
 	mov rax, r8
 	leave
 	ret
+
