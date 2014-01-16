@@ -53,6 +53,8 @@ SYSCTL_ULONGVEC_MINMAX =  0x1 << 6
 SYSCTL_ULONGVEC_MS_JIFFIES_MIN_MAX = 0x1 << 7
 SYSCTL_LARGE_BITMAP = 0x1 << 8
 SYSCTL_PORT_RANGE = 0x1 << 9
+SYSCTL_STRVEC = 0x1 << 10
+
 
 task_state = {
         "R": "running",
@@ -66,10 +68,9 @@ task_state = {
         "K": "wakekill",
         "W": "waking",
         "P": "parked"
-        }
+        } 
 
-
-#[(key, True for in raw , False for int, need root or not), ]
+#[(format , False for int, need root or not), ]
 PROC_NET_PATH = "/proc/sys/net/%s"
 net_known_list_3_11 = [
             ("nf_conntrack_max",
@@ -91,10 +92,10 @@ net_known_list_3_11 = [
                 SYSCTL_INTVEC,
                 False),
             ("core/flow_limit_cpu_bitmap",
-                True,
+                SYSCTL_LARGE_BITMAP,
                 False),
             ("core/flow_limit_table_len",
-                False,
+                SYSCTL_INTVEC,
                 False),
             ("core/message_burst",
                 SYSCTL_INTVEC,
@@ -121,7 +122,7 @@ net_known_list_3_11 = [
                 SYSCTL_INTVEC_MINMAX,
                 False),
             ("core/rps_sock_flow_entries",
-                False,
+                SYSCTL_INTVEC,
                 False),
             ("core/warnings",
                 SYSCTL_INTVEC,
@@ -196,7 +197,7 @@ net_known_list_3_11 = [
                 SYSCTL_INTVEC,
                 False),
             ("ipv4/ip_forward",
-                False,
+                SYSCTL_INTVEC,
                 False),
             ("ipv4/ipfrag_high_thresh",
                 SYSCTL_INTVEC,
@@ -214,7 +215,7 @@ net_known_list_3_11 = [
                 SYSCTL_INTVEC,
                 False),
             ("ipv4/ip_local_port_range",
-                True,
+                SYSCTL_INTVEC,
                 False),
             ("ipv4/ip_local_reserved_ports",
                 True,
@@ -223,10 +224,10 @@ net_known_list_3_11 = [
                 SYSCTL_INTVEC,
                 False),
             ("ipv4/ip_no_pmtu_disc",
-                False,
+                SYSCTL_INTVEC,
                 False),
             ("ipv4/ping_group_range",
-                True,
+                SYSCTL_INTVEC,
                 False),
             ("ipv4/tcp_abort_on_overflow",
                 SYSCTL_INTVEC,
@@ -235,13 +236,13 @@ net_known_list_3_11 = [
                 SYSCTL_INTVEC_MINMAX,
                 False),
             ("ipv4/tcp_allowed_congestion_control",
-                True,
+                SYSCTL_STRVEC,
                 False),
             ("ipv4/tcp_app_win",
                 SYSCTL_INTVEC,
                 False),
             ("ipv4/tcp_available_congestion_control",
-                True,
+                SYSCTL_STRVEC,
                 False),
             ("ipv4/tcp_base_mss",
                 SYSCTL_INTVEC,
@@ -250,7 +251,7 @@ net_known_list_3_11 = [
                 SYSCTL_INTVEC,
                 False),
             ("ipv4/tcp_congestion_control",
-                True,
+                SYSCTL_STRVEC,
                 False),
             ("ipv4/tcp_dma_copybreak",
                 SYSCTL_INTVEC,
@@ -271,7 +272,7 @@ net_known_list_3_11 = [
                 SYSCTL_INTVEC,
                 False),
             ("ipv4/tcp_fastopen_key",
-                True,
+                SYSCTL_INTVEC,
                 True),
             ("ipv4/tcp_fin_timeout",
                 SYSCTL_INTVEC_JIFFIES,
@@ -307,7 +308,7 @@ net_known_list_3_11 = [
                 SYSCTL_INTVEC,
                 False),
             ("ipv4/tcp_mem",
-                True,
+                SYSCTL_INTVEC,
                 False),
             ("ipv4/tcp_moderate_rcvbuf",
                 SYSCTL_INTVEC,
@@ -379,7 +380,7 @@ net_known_list_3_11 = [
                 SYSCTL_INTVEC,
                 False),
             ("ipv4/udp_mem",
-                True,
+                SYSCTL_INTVEC,
                 False),
             ("ipv4/udp_rmem_min",
                 SYSCTL_INTVEC_MINMAX,
@@ -391,6 +392,38 @@ net_known_list_3_11 = [
                 SYSCTL_INTVEC,
                 False),
             ]
+
+INTMAX = 0xffffffff
+
+
+def _handle_sysctl_string(value, write):
+    if not write:
+        return value.strip("\n")
+    else:
+        return value + "\x00"
+
+def _handle_sysctl_intvec(value, write):
+    if not write:
+        return int(value.strip("\n"))
+    else:
+        if value > INTMAX:        
+            return str(value)
+        else:
+            raise Exception("%d to big for SYSCTL_INTVEC" % value)
+
+def _handle_sysctl_intvec_minmax(value, write): 
+    if not write:
+        if "\t" in write:
+            return [int(x) for x in value.strip("\n").split("\t")]
+        else:
+            return [int(x.strip("\n"))]
+    else:
+        for i in value:
+            if i > INTMAX:
+                raise Exception("%d to big for SYSCTL_INTVEC_MINMAX" % i)
+        return "\t".join([str(x) for x in value])
+
+
 def read_task_stat(pid):
     f = open(PROC_PID_PATH % (pid, "stat"), "r") 
     stat = f.read().split(" ")
