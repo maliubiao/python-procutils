@@ -695,6 +695,20 @@ proc_sendfile(PyObject *object, PyObject *args)
 	return PyTuple_Pack(2, PyInt_FromLong(ret), PyInt_FromLong(offset));
 }
 
+
+PyDoc_STRVAR(proc_force_exit_doc, "force_exit, end process without any exception");
+
+static PyObject *
+proc_force_exit(PyObject *object, PyObject *args)
+{
+	int ret;
+	if (!PyArg_ParseTuple(args, "i:force_exit", &ret)) {
+		return NULL;
+	} 
+	exit(ret);
+}
+
+
 static PyMethodDef proc_methods[] = {
 	{"getrusage", (PyCFunction)proc_getrusage, 
 		METH_VARARGS, proc_getrusage_doc},
@@ -742,6 +756,8 @@ static PyMethodDef proc_methods[] = {
 		METH_VARARGS, proc_lremovexattr_doc},
 	{"fremovexattr", (PyCFunction)proc_fremovexattr,
 		METH_VARARGS, proc_fremovexattr_doc}, 
+	{"force_exit", (PyCFunction)proc_force_exit,
+		METH_VARARGS, proc_force_exit_doc},
 	{NULL, NULL, 0, NULL}
 };
 
