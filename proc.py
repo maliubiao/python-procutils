@@ -57,6 +57,10 @@ SYSCTL_PORT_RANGE = 0x1 << 9
 SYSCTL_STRVEC = 0x1 << 10 
 SYSCTL_TCP_FAST_OPEN_KEY = 0x1 << 11
 
+TCP_CA_BUF_MAX = 16 
+INTMAX = 0xffffffff 
+TCP_FAST_OPEN_KEY_LENGTH = 42
+
 task_state = {
         "R": "running",
         "S": "sleeping",
@@ -76,7 +80,7 @@ PROC_NET_PATH = "/proc/sys/net/%s"
 net_known_list_3_11 = [
             ("nf_conntrack_max",
                 SYSCTL_INTVEC,
-                False),
+                1),
             ("core/somaxconn",
                 SYSCTL_INTVEC_MINMAX,
                 1),
@@ -136,58 +140,61 @@ net_known_list_3_11 = [
                 1),
             ("core/xfrm_acq_expires",
                 SYSCTL_INTVEC,
-                False),
+                1),
             ("core/xfrm_aevent_etime",
                 SYSCTL_INTVEC,
-                False),
+                1),
             ("core/xfrm_aevent_rseqth",
                 SYSCTL_INTVEC,
-                False),
+                1),
             ("core/xfrm_larval_drop",
                 SYSCTL_INTVEC,
-                False),
+                1),
             ("ipv4/cipso_cache_bucket_size",
                 SYSCTL_INTVEC,
-                False),
+                1),
             ("ipv4/cipso_cache_enable",
                 SYSCTL_INTVEC,
-                False),
+                1),
             ("ipv4/cipso_rbm_optfmt",
                 SYSCTL_INTVEC,
-                False),
+                1),
             ("ipv4/cipso_rbm_strictvalid",
                 SYSCTL_INTVEC,
-                False),
+                1),
             ("ipv4/icmp_echo_ignore_all",
                 SYSCTL_INTVEC,
-                False),
+                1),
             ("ipv4/icmp_echo_ignore_broadcasts",
                 SYSCTL_INTVEC,
-                False),
+                1),
             ("ipv4/icmp_errors_use_inbound_ifaddr",
                 SYSCTL_INTVEC,
-                False),
+                1),
             ("ipv4/icmp_ignore_bogus_error_responses",
                 SYSCTL_INTVEC,
-                False),
+                1),
             ("ipv4/icmp_ratelimit",
                 SYSCTL_INTVEC_MS_JIFFIES,
-                False),
+                1),
             ("ipv4/icmp_ratemask",
                 SYSCTL_INTVEC_MS_JIFFIES,
-                False),
+                1),
             ("ipv4/igmp_max_memberships",
                 SYSCTL_INTVEC,
-                False),
+                1),
             ("ipv4/igmp_max_msf",
                 SYSCTL_INTVEC,
-                False),
+                1),
+            ("ipv4/inet_peer_threshold",
+                SYSCTL_INTVEC,
+                1),
             ("ipv4/inet_peer_maxttl",
                 SYSCTL_INTVEC_JIFFIES,
-                False),
+                1),
             ("ipv4/inet_peer_minttl",
                 SYSCTL_INTVEC_JIFFIES,
-                False),
+                1),
             ("ipv4/ip_default_ttl",
                 SYSCTL_INTVEC_MINMAX,
                 1),
@@ -199,28 +206,28 @@ net_known_list_3_11 = [
                 1),
             ("ipv4/ip_forward",
                 SYSCTL_INTVEC,
-                False),
+                1),
             ("ipv4/ipfrag_high_thresh",
                 SYSCTL_INTVEC,
-                False),
+                1),
             ("ipv4/ipfrag_low_thresh",
                 SYSCTL_INTVEC,
-                False),
+                1),
             ("ipv4/ipfrag_max_dist",
                 SYSCTL_INTVEC_MINMAX,
-                False),
+                1),
             ("ipv4/ipfrag_secret_interval",
                 SYSCTL_INTVEC_MINMAX,
-                False),
+                1),
             ("ipv4/ipfrag_time",
                 SYSCTL_INTVEC,
-                False),
+                1),
             ("ipv4/ip_local_port_range",
                 SYSCTL_INTVEC,
-                False),
+                2),
             ("ipv4/ip_local_reserved_ports",
-                True,
-                False),
+                SYSCTL_LARGE_BITMAP,
+                0xffff),
             ("ipv4/ip_nonlocal_bind",
                 SYSCTL_INTVEC,
                 1),
@@ -229,51 +236,51 @@ net_known_list_3_11 = [
                 1),
             ("ipv4/ping_group_range",
                 SYSCTL_INTVEC,
-                False),
+                2),
             ("ipv4/tcp_abort_on_overflow",
                 SYSCTL_INTVEC,
-                False),
+                1),
             ("ipv4/tcp_adv_win_scale",
                 SYSCTL_INTVEC_MINMAX,
-                False),
+                1),
             ("ipv4/tcp_allowed_congestion_control",
                 SYSCTL_STRVEC,
-                False),
+                TCP_CA_BUF_MAX),
             ("ipv4/tcp_app_win",
                 SYSCTL_INTVEC,
-                False),
+                1),
             ("ipv4/tcp_available_congestion_control",
                 SYSCTL_STRVEC,
-                False),
+                TCP_CA_BUF_MAX),
             ("ipv4/tcp_base_mss",
                 SYSCTL_INTVEC,
-                False),
+                1),
             ("ipv4/tcp_challenge_ack_limit",
                 SYSCTL_INTVEC,
-                False),
+                1),
             ("ipv4/tcp_congestion_control",
-                SYSCTL_STRVEC,
-                False),
+                SYSCTL_STRING,
+                TCP_CA_BUF_MAX),
             ("ipv4/tcp_dma_copybreak",
                 SYSCTL_INTVEC,
-                False),
+                1),
             ("ipv4/tcp_dsack",
                 SYSCTL_INTVEC,
-                False),
+                1),
             ("ipv4/tcp_early_retrans",
                 SYSCTL_INTVEC,
-                False),
+                1),
             ("ipv4/tcp_ecn",
                 SYSCTL_INTVEC,
-                False),
+                1),
             ("ipv4/tcp_fack",
                 SYSCTL_INTVEC,
-                False),
+                1),
             ("ipv4/tcp_fastopen",
                 SYSCTL_INTVEC,
                 1),
             ("ipv4/tcp_fastopen_key",
-                SYSCTL_INTVEC,
+                SYSCTL_TCP_FAST_OPEN_KEY,
                 42),
             ("ipv4/tcp_fin_timeout",
                 SYSCTL_INTVEC_JIFFIES,
@@ -283,7 +290,7 @@ net_known_list_3_11 = [
                 1),
             ("ipv4/tcp_frto",
                 SYSCTL_INTVEC,
-                False),
+                1),
             ("ipv4/tcp_keepalive_intvl",
                 SYSCTL_INTVEC_JIFFIES,
                 1),
@@ -295,40 +302,40 @@ net_known_list_3_11 = [
                 1),
             ("ipv4/tcp_limit_output_bytes",
                 SYSCTL_INTVEC,
-                False),
+                1),
             ("ipv4/tcp_low_latency",
                 SYSCTL_INTVEC,
-                False),
+                1),
             ("ipv4/tcp_max_orphans",
                 SYSCTL_INTVEC,
                 1),
             ("ipv4/tcp_max_ssthresh",
                 SYSCTL_INTVEC,
-                False),
+                1),
             ("ipv4/tcp_max_syn_backlog",
                 SYSCTL_INTVEC,
-                False),
+                1),
             ("ipv4/tcp_max_tw_buckets",
                 SYSCTL_INTVEC,
                 1),
             ("ipv4/tcp_mem",
                 SYSCTL_INTVEC,
-                False),
+                1),
             ("ipv4/tcp_moderate_rcvbuf",
                 SYSCTL_INTVEC,
-                False),
+                1),
             ("ipv4/tcp_mtu_probing",
                 SYSCTL_INTVEC,
-                False),
+                1),
             ("ipv4/tcp_no_metrics_save",
                 SYSCTL_INTVEC,
-                False),
+                1),
             ("ipv4/tcp_orphan_retries",
                 SYSCTL_INTVEC,
-                False),
+                1),
             ("ipv4/tcp_reordering",
                 SYSCTL_INTVEC,
-                False),
+                1),
             ("ipv4/tcp_retrans_collapse",
                 SYSCTL_INTVEC_MINMAX,
                 1),
@@ -340,85 +347,80 @@ net_known_list_3_11 = [
                 1),
             ("ipv4/tcp_rfc1337",
                 SYSCTL_INTVEC,
-                False),
+                1),
             ("ipv4/tcp_rmem",
                 SYSCTL_INTVEC_MINMAX,
-                False),
+                1),
             ("ipv4/tcp_sack",
                 SYSCTL_INTVEC,
                 1),
             ("ipv4/tcp_slow_start_after_idle",
                 SYSCTL_INTVEC,
-                False),
+                1),
             ("ipv4/tcp_stdurg",
                 SYSCTL_INTVEC,
-                False),
+                1),
             ("ipv4/tcp_syn_retries",
                 SYSCTL_INTVEC,
-                1)
+                1),
             ("ipv4/tcp_synack_retries",
                 SYSCTL_INTVEC,
                 1),
             ("ipv4/tcp_thin_dupack",
                 SYSCTL_INTVEC,
-                False),
+                1),
             ("ipv4/tcp_thin_linear_timeouts",
                 SYSCTL_INTVEC,
-                False),
+                1),
             ("ipv4/tcp_timestamps",
                 SYSCTL_INTVEC,
                 1),
             ("ipv4/tcp_tso_win_divisor",
                 SYSCTL_INTVEC,
-                False),
+                1),
             ("ipv4/tcp_tw_recycle",
                 SYSCTL_INTVEC,
-                False),
+                1),
             ("ipv4/tcp_tw_reuse",
                 SYSCTL_INTVEC,
-                False),
+                1),
             ("ipv4/tcp_window_scaling",
                 SYSCTL_INTVEC,
                 1),
             ("ipv4/tcp_wmem",
                 SYSCTL_INTVEC_MINMAX,
-                False),
+                1),
             ("ipv4/tcp_workaround_signed_windows",
                 SYSCTL_INTVEC,
-                False),
+                1),
+            ("ipv4/tcp_limit_output_bytes",
+                SYSCTL_INTVEC,
+                1),
+            ("ipv4/tcp_challenge_ack_limit",
+                SYSCTL_INTVEC,
+                1),
             ("ipv4/udp_mem",
                 SYSCTL_INTVEC,
-                False),
+                1),
             ("ipv4/udp_rmem_min",
                 SYSCTL_INTVEC_MINMAX,
-                False),
+                1),
             ("ipv4/udp_wmem_min",
                 SYSCTL_INTVEC_MINMAX,
-                False),
+                1),
             ("ipv4/xfrm4_gc_thresh",
                 SYSCTL_INTVEC,
-                False),
+                1)
             ]
 
 
-INTMAX = 0xffffffff 
-TCP_FAST_OPEN_KEY_LENGTH = 42
-def _handle_sysctl_string(value, write):
+def _handle_sysctl_string(value, length, write):
     if not write:
         return value.strip("\n")
     else:
         return value + "\x00"
 
-def _handle_sysctl_intvec(value, write):
-    if not write:
-        return int(value.strip("\n"))
-    else:
-        if value > INTMAX:        
-            return str(value)
-        else:
-            raise Exception("%d to big for SYSCTL_INTVEC" % value)
-
-def _handle_sysctl_intvec_minmax(value, write): 
+def _handle_sysctl_intvec(value, length, write): 
     if not write:
         if "\t" in value:
             return [int(x) for x in value.strip("\n").split("\t")]
@@ -430,11 +432,13 @@ def _handle_sysctl_intvec_minmax(value, write):
                 raise Exception("%d to big for SYSCTL_INTVEC_MINMAX" % i)
         return "\t".join([str(x) for x in value])
 
-def _handle_sysctl_key(value, write):
+def _handle_sysctl_key(value, length, write):
     if not write: 
+        if len(value) > length:
+            raise Exception("%s: too big for this api" % value)
         return "".join(value.strip("\n").split("-"))
     else: 
-        if len(value) != 32
+        if len(value) != 32:
             raise Exception("%s: size is not right" % value)
         return "-".join([value[x*4:(x+1)*4] for x in range(4)])
 
@@ -649,51 +653,40 @@ def read_pid_pagesinfo(pid, rangelist):
     return pageinfos
 
 
-def read_api_type(flag, data):
+def read_api_type(hit, data):
+    flag = hit[1]
     if flag == SYSCTL_INTVEC:
-        final = _handle_sysctl_intvec(data, False)
+        final = _handle_sysctl_intvec(data, hit[2], False)
     elif flag == SYSCTL_STRING:
-        final = _handle_sysctl_string(data, False)
+        final = _handle_sysctl_string(data, hit[2], False)
     elif flag == SYSCTL_INTVEC_MINMAX:
-        final = _handle_sysctl_intvec_minmax(data, False)
+        final = _handle_sysctl_intvec(data, hit[2], False)
+    elif flag == SYSCTL_INTVEC_JIFFIES: 
+        final = _handle_sysctl_intvec(data, hit[2], False) 
+    elif flag == SYSCTL_INTVEC_MS_JIFFIES:
+        final = _handle_sysctl_intvec(data, hit[2], False)
+    elif flag == SYSCTL_TCP_FAST_OPEN_KEY:
+        final = _handle_sysctl_key(data, hit[2], False)
     else:
         final = data[:-1] 
     return final        
 
-def read_api_file(hit, perm=False): 
-    if not hit[2]: 
-        f = open(PROC_NET_PATH % hit[0], "r") 
-        data = read_api_type(hit[1], f.read()) 
-        f.close()
-        return data
-    else:
-        if not perm:
-            return -1 
-        f = open(PROC_NET_PATH % hit[0], "r") 
-        data = read_api_type(hit[1], f.read())
-        f.close()
-        return data
+def read_api_file(hit): 
+    f = open(PROC_NET_PATH % hit[0], "r") 
+    data = read_api_type(hit, f.read())
+    f.close()
+    return data
 
 def write_api_file(value, hit, perm=False):
-    if not hit[2]:
-        f = open(PROC_NET_PATH % hit[0], "r")
-        f.truncate(0)
-        if not hit[1]: 
-            f.write(int(value))
-        else:
-            f.write(value) 
-    else:        
-        if not perm: 
-            return -1
-        f = open(PROC_NET_PATH % hit[0], "r")
-        f.truncate(0)
-        if not hit[1]:
-            f.write(int(value))
-        else:
-            f.write(value)
-        f.close()
+    f = open(PROC_NET_PATH % hit[0], "r")
+    f.truncate(0)
+    if not hit[1]:
+        f.write(int(value))
+    else:
+        f.write(value)
+    f.close()
 
-def read_sys_net(keylist = None, perm=False):
+def read_sys_net(keylist = None):
     net_dict = {}
     if keylist:
         for key in keylist:
@@ -706,10 +699,7 @@ def read_sys_net(keylist = None, perm=False):
                 net_dict[key] = value 
     else:        
         for known in net_known_list_3_11: 
-            try:
-                value = read_api_file(known, perm) 
-            except:
-                pdb.set_trace()
+            value = read_api_file(known) 
             net_dict[known[0]] = value 
     return net_dict
 
