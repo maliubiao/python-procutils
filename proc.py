@@ -418,6 +418,8 @@ def _handle_sysctl_string(value, length, write):
     if not write:
         return value.strip("\n")
     else:
+        if len(value) > length:
+            raise Exception("%s: too big for this api" % value)
         return value + "\x00"
 
 def _handle_sysctl_intvec(value, length, write): 
@@ -515,6 +517,32 @@ def read_pid_statm(pid):
     statm_dict["data"] = int(lines[5])
     return statm_dict        
 
+def dict_value_int(d, key):
+    if key not in d:
+        return
+    d[key.lower()] = int(d[key])
+    if key.lower() != key: 
+        del d[key]
+
+    
+def dict_size_int(d, key):
+    if key not in d:
+        return 
+    size, which = d[key].split(" ")
+    size = int(size[0]) 
+    which = which.lower()
+    if which == "kb":
+        size *= 1024
+    elif which == "mb":
+        size *= (1024 * 1024)
+    elif which == "gb":
+        size *= (1024 * 1024 * 1024) 
+    else:
+        raise Exception("unknown size %s" % which)
+    d[key.lower()] = size
+    if key.lower() != key:
+        del d[key]
+
 def read_pid_status(pid):
     f = open(PROC_PID_PATH % (pid, "status"), "r")
     lines = f.readlines()
@@ -522,7 +550,26 @@ def read_pid_status(pid):
     status_dict = {}
     for line in lines:
         entry = line.split(":\t")
-        status_dict[entry[0]] = entry[1].strip("\n").replace("\t", " ") 
+        status_dict[entry[0]] = entry[1].strip("\n").strip(" ").replace("\t", " ") 
+    dict_value_int(status_dict, "Tgid") 
+    dict_value_int(status_dict, "PPid")
+    dict_value_int(status_dict, "Pid")
+    dict_value_int(status_dict, "nonvoluntary_ctxt_switches")
+    dict_value_int(status_dict, "voluntary_ctxt_switches")
+    dict_value_int(status_dict, "Threads") 
+    dict_value_int(status_dict, "TracerPid")
+    uids = status_dict["Uid"].split(" ")
+    status_dict["uid"], status_dict["euid"], status_dict["suid"], status_dict["fsuid"] = [int(x) for x in uids]
+    del status_dict["Uid"]
+    gids = status_dict["Gid"].split(" ")
+    status_dict["gid"], status_dict["egid"], status_dict["sgid"], status_dict["fsgid"] = [int(x) for x in gids]
+    del status_dict["Gid"]
+    groups = status_dict["Groups"].split(" ")
+    status_dict["groups"] = [int(x) for x in groups]
+    del status_dict["Groups"]
+    for i in ["VmData", "VmExe", "VmHWM", "VmLck", "VmLib", "VmPTE",
+            "VmPeak", "VmPin", "VmRSS", "VmSize", "VmStk", "VmSwap"]:
+        dict_size_int(status_dict, i) 
     return status_dict
 
 def read_pid_mountinfo(pid):
@@ -653,37 +700,35 @@ def read_pid_pagesinfo(pid, rangelist):
     return pageinfos
 
 
-def read_api_type(hit, data):
+def proc_api_type(hit, data, write):
     flag = hit[1]
     if flag == SYSCTL_INTVEC:
-        final = _handle_sysctl_intvec(data, hit[2], False)
+        final = _handle_sysctl_intvec(data, hit[2], write)
     elif flag == SYSCTL_STRING:
-        final = _handle_sysctl_string(data, hit[2], False)
+        final = _handle_sysctl_string(data, hit[2], write)
     elif flag == SYSCTL_INTVEC_MINMAX:
-        final = _handle_sysctl_intvec(data, hit[2], False)
+        final = _handle_sysctl_intvec(data, hit[2], write)
     elif flag == SYSCTL_INTVEC_JIFFIES: 
-        final = _handle_sysctl_intvec(data, hit[2], False) 
+        final = _handle_sysctl_intvec(data, hit[2], write) 
     elif flag == SYSCTL_INTVEC_MS_JIFFIES:
-        final = _handle_sysctl_intvec(data, hit[2], False)
+        final = _handle_sysctl_intvec(data, hit[2], write)
     elif flag == SYSCTL_TCP_FAST_OPEN_KEY:
-        final = _handle_sysctl_key(data, hit[2], False)
-    else:
-        final = data[:-1] 
+        final = _handle_sysctl_key(data, hit[2], write)
+    else: 
+        final = _handle_sysctl_string(data, hit[2], write)
     return final        
 
 def read_api_file(hit): 
     f = open(PROC_NET_PATH % hit[0], "r") 
-    data = read_api_type(hit, f.read())
+    data = proc_api_type(hit, f.read(), False)
     f.close()
     return data
 
 def write_api_file(value, hit, perm=False):
     f = open(PROC_NET_PATH % hit[0], "r")
     f.truncate(0)
-    if not hit[1]:
-        f.write(int(value))
-    else:
-        f.write(value)
+    data = proc_api_type(hit, f.read(), True)
+    f.write(data)
     f.close()
 
 def read_sys_net(keylist = None):
