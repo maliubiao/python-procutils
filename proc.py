@@ -3,6 +3,7 @@ import os
 import sys
 import pdb
 
+
 PROC_PID_PATH = "/proc/%d/%s"
 PROC_PATH = "/proc/%s"
 #task_state
@@ -60,6 +61,7 @@ SYSCTL_TCP_FAST_OPEN_KEY = 0x1 << 11
 TCP_CA_BUF_MAX = 16 
 INTMAX = 0xffffffff 
 TCP_FAST_OPEN_KEY_LENGTH = 42
+NSIG = 64
 
 task_state = {
         "R": "running",
@@ -75,6 +77,41 @@ task_state = {
         "P": "parked"
         } 
 
+signal_dict = {
+        1: "SIGHUP",        
+        2: "SIGINT",
+        3: "SIGQUIT",
+        4: "SIGILL",
+        5: "SIGTRAP",
+        6: "SIGABRT", 
+        7: "SIGBUS",
+        8: "SIGFPE",
+        9: "SIGKILL",
+        10: "SIGUSR1",
+        11: "SIGSEGV",
+        12: "SIGUSR2",
+        13: "SIGPIPE",
+        14: "SIGALRM",
+        15: "SIGTERM",
+        16: "SIGSTKFLT",
+        17: "SIGCHLD",
+        18: "SIGCONT",
+        19: "SIGSTOP",
+        20: "SIGTSTP",
+        21: "SIGTTIN",
+        22: "SIGTTOU",
+        23: "SIGURG",
+        24: "SIGXCPU",
+        25: "SIGXFSZ",
+        26: "SIGVTALRM",
+        27: "SIGPROF",
+        28: "SIGWINCH",
+        29: "SIGIO",
+        30: "SIGPWR",
+        31: "SIGSYS",
+        32: "SIGRTMIN"
+        }
+       
 #[(name, format , length), ]
 PROC_NET_PATH = "/proc/sys/net/%s"
 net_known_list_3_11 = [
@@ -524,7 +561,9 @@ def dict_value_int(d, key):
     if key.lower() != key: 
         del d[key]
 
-    
+def sigset_is_member(siglong, sig): 
+    return bool(siglong >> (sig - 1)) 
+
 def dict_size_int(d, key):
     if key not in d:
         return 
@@ -570,6 +609,8 @@ def read_pid_status(pid):
     for i in ["VmData", "VmExe", "VmHWM", "VmLck", "VmLib", "VmPTE",
             "VmPeak", "VmPin", "VmRSS", "VmSize", "VmStk", "VmSwap"]:
         dict_size_int(status_dict, i) 
+    status_dict["sigqsize"], status_dict["sigqmax"] = [int(x) for x in status_dict["SigQ"].split("/")]
+    del status_dict["SigQ"]
     return status_dict
 
 def read_pid_mountinfo(pid):
