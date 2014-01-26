@@ -63,6 +63,8 @@ INTMAX = 0xffffffff
 TCP_FAST_OPEN_KEY_LENGTH = 42
 NSIG = 64
 
+LONGMAX = 0xffffffffffffffff
+
 task_state = {
         "R": "running",
         "S": "sleeping",
@@ -562,7 +564,14 @@ def dict_value_int(d, key):
         del d[key]
 
 def sigset_is_member(siglong, sig): 
-    return bool(siglong >> (sig - 1)) 
+    return bool(siglong & (1L << (sig - 1))) 
+
+def sigset_all_signal(siglong):
+    signals = []
+    for i in signal_dict:
+        if sigset_is_member(siglong, i):
+            signals.append(signal_dict[i])
+    return signals
 
 def dict_size_int(d, key):
     if key not in d:
@@ -579,6 +588,13 @@ def dict_size_int(d, key):
     else:
         raise Exception("unknown size %s" % which)
     d[key.lower()] = size
+    if key.lower() != key:
+        del d[key]
+
+def dict_signal_long(d, key):
+    if key not in d:
+        return
+    d[key.lower()] = long(d[key], 0xf)
     if key.lower() != key:
         del d[key]
 
@@ -606,11 +622,13 @@ def read_pid_status(pid):
     groups = status_dict["Groups"].split(" ")
     status_dict["groups"] = [int(x) for x in groups]
     del status_dict["Groups"]
-    for i in ["VmData", "VmExe", "VmHWM", "VmLck", "VmLib", "VmPTE",
-            "VmPeak", "VmPin", "VmRSS", "VmSize", "VmStk", "VmSwap"]:
+    for i in ("VmData", "VmExe", "VmHWM", "VmLck", "VmLib", "VmPTE",
+            "VmPeak", "VmPin", "VmRSS", "VmSize", "VmStk", "VmSwap"):
         dict_size_int(status_dict, i) 
     status_dict["sigqsize"], status_dict["sigqmax"] = [int(x) for x in status_dict["SigQ"].split("/")]
     del status_dict["SigQ"]
+    for i in ("SigBlk", "SigCgt", "SigIgn", "SigPnd"):
+        dict_signal_long(status_dict, i) 
     return status_dict
 
 def read_pid_mountinfo(pid):
