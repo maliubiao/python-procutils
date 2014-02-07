@@ -116,23 +116,35 @@ PyDoc_STRVAR(proc_sched_setaffinity_doc, "call sched_setaffinity");
 static PyObject *
 proc_sched_setaffinity(PyObject *object, PyObject *args)
 {
-	int pid;
-	int size;
+	int pid; 
 	PyObject *set_list;
+	PyObject *set_iter;
+	PyObject *set_next;
 	cpu_set_t set;
-	int i; 
+	
 	if(!PyArg_ParseTuple(args, "IO:sched_setaffinity", &pid, &set_list)) {
 		return NULL;
-	}
-	if (!PyTuple_Check(set_list)) {
-		Py_RETURN_NONE;
 	} 
+
 	CPU_ZERO(&set);	
-	size = PyTuple_Size(set_list);
-	
-	for (i=0; i < size; i++) {
-		CPU_SET(PyInt_AsLong(PyTuple_GetItem(set_list, i)), &set);
+	set_iter = PyObject_GetIter(set_list);
+	if (!set_iter) {
+		PyErr_SetString(PyExc_TypeError, "set_list is not iterable");
+		return NULL;
 	}
+	set_next = PyIter_Next(set_iter);
+	while(set_next) {	
+		if (!PyInt_Check(set_next)) {
+			Py_DECREF(set_iter); 
+			Py_DECREF(set_next);
+			PyErr_SetString(PyExc_TypeError, "there is somethingthat is not a integer in set_list");
+			return NULL;
+		}
+		CPU_SET(PyInt_AsLong(set_next), &set);
+		Py_DECREF(set_next);
+		set_next = PyIter_Next(set_iter);
+	}
+	Py_DECREF(set_iter);
 	if (sched_setaffinity(pid, sizeof(set), &set) < 0) { 
 		PyErr_SetFromErrno(PyExc_OSError);
 		return NULL;
