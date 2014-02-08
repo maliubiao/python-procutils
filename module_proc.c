@@ -1,5 +1,6 @@
 #include <Python.h>
 #include <unistd.h>
+#include <errno.h>
 #include <sched.h>
 #include <sys/time.h>
 #include <sys/resource.h>
@@ -7,6 +8,8 @@
 #include <sys/syscall.h>
 #include <sys/sendfile.h>
 #include <attr/xattr.h>
+#include <execinfo.h>
+#include <linux/capability.h>
 
 extern PyObject *get_cpu_brand();
 extern int *do_cpuid(int);
@@ -720,6 +723,92 @@ proc_force_exit(PyObject *object, PyObject *args)
 	exit(ret);
 }
 
+PyDoc_STRVAR(proc_cap_get_doc, "get capability of pid");
+
+static PyObject *
+proc_cap_get(PyObject *object, PyObject *args)
+{
+	int pid = 0; 
+	int ret = 0;
+	struct __user_cap_data_struct *cap_data = NULL; 
+	struct __user_cap_header_struct cap_header;
+	if (!PyArg_ParseTuple(args, "i:cap_get", &pid)) {
+		return NULL;
+	}
+	cap_header.version = _LINUX_CAPABILITY_VERSION_3;
+	cap_header.pid = pid;
+	cap_data = PyMem_Malloc(_LINUX_CAPABILITY_U32S_3 * sizeof(struct __user_cap_data_struct));
+	if (!cap_data) {
+		PyErr_SetString(PyExc_OSError, "failed to allocate memory");
+		return NULL;
+	}
+	ret = syscall(SYS_capget, &cap_header, cap_data);
+	if (ret) {
+		errno = ret;
+		PyErr_SetFromErrno(PyExc_OSError);
+		PyMem_Free(cap_data);
+		return 0; 
+	}
+	unsigned i = 0;
+	PyObject *cap_ret_list = PyList_New(0);
+	for (i = 0; i < _LINUX_CAPABILITY_U32S_3; i++) {
+		PyObject *cap_dict = PyDict_New();
+		PyDict_SetItemString(cap_dict, "effective", PyLong_FromUnsignedLong((cap_data + i)->effective));
+		PyDict_SetItemString(cap_dict, "permitted", PyLong_FromUnsignedLong((cap_data + i)->permitted));
+		PyDict_SetItemString(cap_dict, "inheritable", PyLong_FromUnsignedLong((cap_data +i)->inheritable));
+		PyList_Append(cap_ret_list, cap_dict);
+
+	}
+	return cap_ret_list; 
+}
+
+PyDoc_STRVAR(proc_backtrace_doc, "backtrace n frames, use n=0 to get as many as possible"); 
+
+static PyObject *
+proc_backtrace(PyObject *object, PyObject *args)
+{
+	int count = 0; 
+	int memsize = 0;
+	int nptrs = 0; 
+	void **buffer = NULL; 
+	char **strings = NULL; 
+	PyObject *retlist = NULL;
+
+	if(!PyArg_ParseTuple(args, "I:backtrace", &count)) {
+		return NULL;
+	}
+#define BUFFER_SIZE 1024 
+	if (count == 0) {
+		count = BUFFER_SIZE; 
+	} 
+	memsize = sizeof(void *) * count;
+#undef BUFFER_SIZE
+	buffer = PyMem_Malloc(memsize);
+	if (buffer == NULL) {
+		goto NOMEMORY;
+	}
+	nptrs = backtrace(buffer, count);	
+	strings = backtrace_symbols(buffer, nptrs); 
+	PyMem_Free(buffer);
+	if (strings == NULL) {
+		goto SYMFAILED;
+	}
+	retlist = PyList_New(0);	
+	unsigned i = 0;
+	for (i = 0; i < nptrs; i++) {
+		PyList_Append(retlist, PyString_FromString(strings[i]));
+	}
+	free(strings);
+	return retlist;
+NOMEMORY: 
+	PyErr_SetString(PyExc_RuntimeError, "failed to allocate memory");
+	return NULL;
+SYMFAILED:
+	PyErr_SetString(PyExc_RuntimeError, "failed to get symbols");
+	return NULL;
+
+}
+
 
 static PyMethodDef proc_methods[] = {
 	{"getrusage", (PyCFunction)proc_getrusage, 
@@ -770,6 +859,10 @@ static PyMethodDef proc_methods[] = {
 		METH_VARARGS, proc_fremovexattr_doc}, 
 	{"force_exit", (PyCFunction)proc_force_exit,
 		METH_VARARGS, proc_force_exit_doc},
+	{"cap_get", (PyCFunction)proc_cap_get,
+		METH_VARARGS, proc_cap_get_doc},
+	{"backtrace", (PyCFunction)proc_backtrace,
+		METH_VARARGS, proc_backtrace_doc}, 
 	{NULL, NULL, 0, NULL}
 };
 

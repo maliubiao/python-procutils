@@ -330,6 +330,38 @@ eg: /proc/sys/net/ipv4* -> ip-sysctl.txt
  'ipv4/xfrm4_gc_thresh': [1024],
  'nf_conntrack_max': [65536]}
 ```
+###stack backtrace 
+```shell
+In [6]: _proc.backtrace(0)
+Out[6]: 
+['./_proc.so(+0x20af) [0x7f83716210af]',
+ '/usr/lib64/libpython2.7.so.1.0(PyEval_EvalFrameEx+0x113a) [0x7f837849911a]',
+ '/usr/lib64/libpython2.7.so.1.0(PyEval_EvalCodeEx+0x403) [0x7f837849e5c3]',
+ '/usr/lib64/libpython2.7.so.1.0(PyEval_EvalCode+0x32) [0x7f83784cc8b2]',
+ '/usr/lib64/libpython2.7.so.1.0(PyEval_EvalFrameEx+0x4e7b) [0x7f837849ce5b]',
+ '/usr/lib64/libpython2.7.so.1.0(PyEval_EvalCodeEx+0x143) [0x7f837849e303]',
+ '/usr/lib64/libpython2.7.so.1.0(PyEval_EvalFrameEx+0xd27) [0x7f8378498d07]',
+ '/usr/lib64/libpython2.7.so.1.0(PyEval_EvalCodeEx+0x403) [0x7f837849e5c3]',
+ '/usr/lib64/libpython2.7.so.1.0(PyEval_EvalFrameEx+0xd27) [0x7f8378498d07]',
+ '/usr/lib64/libpython2.7.so.1.0(PyEval_EvalCodeEx+0x403) [0x7f837849e5c3]',
+ '/usr/lib64/libpython2.7.so.1.0(PyEval_EvalFrameEx+0xd27) [0x7f8378498d07]',
+ '/usr/lib64/libpython2.7.so.1.0(PyEval_EvalCodeEx+0x403) [0x7f837849e5c3]',
+ '/usr/lib64/libpython2.7.so.1.0(PyEval_EvalFrameEx+0xd27) [0x7f8378498d07]',
+ '/usr/lib64/libpython2.7.so.1.0(PyEval_EvalCodeEx+0x403) [0x7f837849e5c3]',
+ '/usr/lib64/libpython2.7.so.1.0(PyEval_EvalFrameEx+0xd27) [0x7f8378498d07]',
+ '/usr/lib64/libpython2.7.so.1.0(PyEval_EvalCodeEx+0x143) [0x7f837849e303]',
+ '/usr/lib64/libpython2.7.so.1.0(PyEval_EvalFrameEx+0xd27) [0x7f8378498d07]',
+ '/usr/lib64/libpython2.7.so.1.0(PyEval_EvalCodeEx+0x403) [0x7f837849e5c3]',
+ '/usr/lib64/libpython2.7.so.1.0(PyEval_EvalFrameEx+0xd27) [0x7f8378498d07]',
+ '/usr/lib64/libpython2.7.so.1.0(PyEval_EvalCodeEx+0x403) [0x7f837849e5c3]',
+ '/usr/lib64/libpython2.7.so.1.0(PyEval_EvalCode+0x32) [0x7f83784cc8b2]',
+ '/usr/lib64/libpython2.7.so.1.0(+0xf3d91) [0x7f83784d9d91]',
+ '/usr/lib64/libpython2.7.so.1.0(PyRun_FileExFlags+0x86) [0x7f83784da156]',
+ '/usr/lib64/libpython2.7.so.1.0(PyRun_SimpleFileExFlags+0x17d) [0x7f83784daa2d]',
+ '/usr/lib64/libpython2.7.so.1.0(Py_Main+0x3ad) [0x7f83784e422d]',
+ '/lib64/libc.so.6(__libc_start_main+0xf5) [0x7f8377e3da15]',
+ '/usr/bin/python() [0x400791]']
+ ```
 ###on which cpu , which node
 ```shell 
 >>> _proc.getcpu()
