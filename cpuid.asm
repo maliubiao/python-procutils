@@ -13,9 +13,9 @@ get_cpu_brand:
 	mov rbp, rsp 
 	sub rsp, 32 
 	;$eax=0, cpuid
-	xor eax, eax
+	xor eax, eax 
 	cpuid
-	;$ebx, $edx, $ecx->[$esp]
+	;copy registers
 	mov [rsp], ebx
 	mov [rsp+4], edx
 	mov [rsp+8], ecx 
@@ -52,4 +52,5 @@ do_cpuid:
 	mov rax, r8
 	leave
 	ret
+
 

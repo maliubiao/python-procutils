@@ -492,6 +492,8 @@ proc_get_quota(PyObject *object, PyObject *args)
 	return ret_dict; 
 }
 
+#define XATTR_BUF_SIZE  1024
+
 PyDoc_STRVAR(proc_setxattr_doc, "call setxattr");
 
 static PyObject *
@@ -502,7 +504,8 @@ proc_setxattr(PyObject *object, PyObject *args)
 	char *value;
 	int flags;
 	int ret;
-	if (!PyArg_ParseTuple(args, "ssss:setxattr", &path, &name, &value, &flags)) {
+
+	if (!PyArg_ParseTuple(args, "sssl:setxattr", &path, &name, &value, &flags)) {
 		return NULL;
 	}
 	ret = setxattr(path, name, value, strlen(value), flags);
@@ -512,6 +515,8 @@ proc_setxattr(PyObject *object, PyObject *args)
 	}
 	Py_RETURN_NONE; 
 }
+
+
 
 PyDoc_STRVAR(proc_lsetxattr_doc, "call lsetxattr");
 
@@ -523,7 +528,7 @@ proc_lsetxattr(PyObject *object, PyObject *args)
 	char *value;
 	int flags;
 	int ret;
-	if (!PyArg_ParseTuple(args, "ssss:lsetxattr", &path, &name, &value, &flags)) {
+	if (!PyArg_ParseTuple(args, "sssl:lsetxattr", &path, &name, &value, &flags)) {
 		return NULL;
 	}
 	ret = lsetxattr(path, name, value, strlen(value), flags);
@@ -544,7 +549,7 @@ proc_fsetxattr(PyObject *object, PyObject *args)
 	char *value;
 	int flags;
 	int ret;
-	if (!PyArg_ParseTuple(args, "ssss:fsetxattr", &fd, &name, &value, &flags)) {
+	if (!PyArg_ParseTuple(args, "issl:fsetxattr", &fd, &name, &value, &flags)) {
 		return NULL;
 	}
 	ret = fsetxattr(fd, name, value, strlen(value), flags);
@@ -567,13 +572,22 @@ proc_listxattr(PyObject *object, PyObject *args)
 	if (!PyArg_ParseTuple(args, "s:listxattr", &path)) {
 		return NULL;
 	} 
-	buf = PyMem_Malloc(1024); 
-	ret = listxattr(path, buf, 1024);
+	buf = PyMem_Malloc(XATTR_BUF_SIZE); 
+	if (!buf) {
+		goto failed;
+	}
+	ret = listxattr(path, buf, XATTR_BUF_SIZE);
 	if (ret < 0) {
-		PyErr_SetFromErrno(PyExc_OSError);
-		return NULL;
+		goto free_buf;
 	}
 	return PyString_FromStringAndSize(buf, ret);
+free_buf:
+	PyMem_Free(buf);
+failed:
+	if (!PyErr_Occurred()) {
+		PyErr_SetFromErrno(PyExc_OSError);
+	}
+	return NULL; 
 }
 
 
@@ -588,14 +602,22 @@ proc_llistxattr(PyObject *object, PyObject *args)
 	if (!PyArg_ParseTuple(args, "s:llistxattr", &path)) {
 		return NULL;
 	} 
-	buf = PyMem_Malloc(1024); 
-	ret = llistxattr(path, buf, 1024);
+	buf = PyMem_Malloc(XATTR_BUF_SIZE); 
+	if (!buf) {
+		goto failed;
+	}
+	ret = llistxattr(path, buf, XATTR_BUF_SIZE);
 	if (ret < 0) {
-		PyErr_SetFromErrno(PyExc_OSError);
-		return NULL;
+		goto free_buf;
 	} 
 	return PyString_FromStringAndSize(buf, ret);
-	
+free_buf:
+	PyMem_Free(buf);
+failed:
+	if (!PyErr_Occurred()) {
+		PyErr_SetFromErrno(PyExc_OSError);
+	}
+	return NULL; 
 }
 
 
@@ -610,13 +632,22 @@ proc_flistxattr(PyObject *object, PyObject *args)
 	if (!PyArg_ParseTuple(args, "i:flistxattr", &fd)) {
 		return NULL;
 	} 
-	buf = PyMem_Malloc(1024); 
-	ret = flistxattr(fd, buf, 1024);
+	buf = PyMem_Malloc(XATTR_BUF_SIZE); 
+	if (!buf) {
+		goto failed;
+	}
+	ret = flistxattr(fd, buf, XATTR_BUF_SIZE);
 	if (ret < 0) {
-		PyErr_SetFromErrno(PyExc_OSError);
-		return NULL;
+		goto free_buf;
 	} 
 	return PyString_FromStringAndSize(buf, ret); 
+free_buf:
+	PyMem_Free(buf);
+failed:
+	if (!PyErr_Occurred()) {
+		PyErr_SetFromErrno(PyExc_OSError);
+	}
+	return NULL; 
 }
 
 PyDoc_STRVAR(proc_removexattr_doc, "call removexattr");
@@ -677,14 +708,104 @@ proc_fremovexattr(PyObject *object, PyObject *args)
 	Py_RETURN_NONE;	
 }
 
-/*
+
 PyDoc_STRVAR(proc_getxattr_doc, "call getxattr"); 
+
 static PyObject *
 proc_getxattr(PyObject *object, PyObject *args)
-{
-	Py_RETURN_NONE;
+{ 
+	char *path;
+	char *name;
+	char *buf;
+	int ret;
+
+	if (!PyArg_ParseTuple(args, "ss:getxattr", &path, &name)) {
+		return NULL;
+	}
+	buf = PyMem_Malloc(XATTR_BUF_SIZE);	
+	if (buf == NULL) {
+		goto failed;
+	}
+	memset(buf, 0, XATTR_BUF_SIZE);
+	ret = getxattr(path, name, buf, XATTR_BUF_SIZE - 1);
+	if (ret < 0) {
+		goto free_buf;
+	}
+	return PyString_FromStringAndSize(buf, ret);
+free_buf:
+	PyMem_Free(buf);
+failed:
+	if (!PyErr_Occurred()) {
+		PyErr_SetFromErrno(PyExc_OSError);
+	} 
+	return NULL;
 }
-*/
+
+
+PyDoc_STRVAR(proc_lgetxattr_doc, "call lgetxattr"); 
+
+static PyObject *
+proc_lgetxattr(PyObject *object, PyObject *args)
+{ 
+	char *path;
+	char *name;
+	char *buf;
+	int ret;
+	if (!PyArg_ParseTuple(args, "ss:lgetxattr", &path, &name)) {
+		return NULL;
+	}
+	buf = PyMem_Malloc(XATTR_BUF_SIZE);	
+	if (buf == NULL) {
+		goto failed;
+	}
+	memset(buf, 0, XATTR_BUF_SIZE);
+	ret = lgetxattr(path, name, buf, XATTR_BUF_SIZE - 1);
+	if (ret < 0) {
+		goto free_buf;
+	}
+	return PyString_FromStringAndSize(buf, ret);
+free_buf:
+	PyMem_Free(buf);
+failed:
+	if (!PyErr_Occurred()) { 
+		PyErr_SetFromErrno(PyExc_OSError);
+	}
+	return NULL;
+}
+
+PyDoc_STRVAR(proc_fgetxattr_doc, "call fgetxattr"); 
+
+static PyObject *
+proc_fgetxattr(PyObject *object, PyObject *args)
+{ 
+	int fd;
+	char *name;
+	char *buf;
+	int ret;
+
+	if (!PyArg_ParseTuple(args, "is:fgetxattr", &fd, &name)) {
+		return NULL;
+	}
+	buf = PyMem_Malloc(XATTR_BUF_SIZE);	
+	if (buf == NULL) {
+		goto failed;
+	}
+	memset(buf, 0, XATTR_BUF_SIZE);
+	ret = fgetxattr(fd, name, buf, XATTR_BUF_SIZE - 1);
+	if (ret < 0) {
+		goto free_buf;
+	}
+	return PyString_FromStringAndSize(buf, ret);
+free_buf:
+	PyMem_Free(buf);
+failed:
+	if (!PyErr_Occurred()) {
+		PyErr_SetFromErrno(PyExc_OSError);	
+	} 
+	return NULL;
+}
+
+#undef XATTR_BUF_SIZE
 
 PyDoc_STRVAR(proc_sendfile_doc, "call sendfile, see man sendfile, return"
 		"(the number of bytes writted to out_fd,"
@@ -777,7 +898,7 @@ proc_backtrace(PyObject *object, PyObject *args)
 	if(!PyArg_ParseTuple(args, "I:backtrace", &count)) {
 		return NULL;
 	}
-#define BUFFER_SIZE 1024 
+#define BUFFER_SIZE 1024
 	if (count == 0) {
 		count = BUFFER_SIZE; 
 	} 
@@ -857,6 +978,12 @@ static PyMethodDef proc_methods[] = {
 		METH_VARARGS, proc_lremovexattr_doc},
 	{"fremovexattr", (PyCFunction)proc_fremovexattr,
 		METH_VARARGS, proc_fremovexattr_doc}, 
+	{"getxattr", (PyCFunction)proc_getxattr,
+		METH_VARARGS, proc_getxattr_doc},
+	{"lgetxattr", (PyCFunction)proc_lgetxattr,
+		METH_VARARGS, proc_lgetxattr_doc},
+	{"fgetxattr", (PyCFunction)proc_fgetxattr,
+		METH_VARARGS, proc_fgetxattr_doc}, 
 	{"force_exit", (PyCFunction)proc_force_exit,
 		METH_VARARGS, proc_force_exit_doc},
 	{"cap_get", (PyCFunction)proc_cap_get,
